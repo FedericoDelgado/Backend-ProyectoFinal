@@ -1,73 +1,84 @@
-const express = require("express");
-const routerCarrito = express.Router();
-const Carrito = require("../carrito.js");
+import { Router } from "express";
+import bodyParser from "body-parser";
+import { carritosDao } from "../daos/index.js";
+
+const routerCarrito = Router();
+const jsonParser = bodyParser.json();
+
 const auth= true;
 
-const carrito = new Carrito();
 
+let result;
 // Sacar
-routerCarrito.get( "/", (req, res, next) => {
+routerCarrito.get( "/", async (req, res, next) => {
+    result = await carritosDao.getAll();
     if(!auth){
         return res.status(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    res.status(201).json(carrito.getAll());
+    if(result){
+        return res.status(201).json(result); 
+    }
+    
     next();
 });
 // !Sacar
-routerCarrito.post( "/", (req, res, next) => {
+routerCarrito.post( "/", jsonParser, async (req, res, next) => {
+    result = await carritosDao.postCarrito();
     if(!auth){
         return res.sendStatus(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    res.status(201).json(carrito.postCarrito());
+    if(result){
+        return res.status(201).json(result); 
+    }
     next();
 });
 
-routerCarrito.post( "/:id/productos", (req, res, next) => {
+routerCarrito.post( "/:id/productos", jsonParser, async (req, res, next) => {
+    result = await carritosDao.postCarritoId(req.body, req.params.id);
     if(!auth){
         return res.sendStatus(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    res.status(201).json(carrito.postCarritoId(req.body, req.params.id));
+    if(result){
+        return res.status(201).json(result); 
+    }
     next();
 });
 
-routerCarrito.get( "/:id/productos", (req, res, next) => {
+routerCarrito.get( "/:id/productos", async (req, res) => {
     if(!auth){
         return res.sendStatus(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    let result = carrito.getCarrito(req.params.id);
+    result = await carritosDao.getCarrito(req.params.id);
     if(!result){
-        res.status(404).json({ error: 'Carrito no encontrado' });
+        return res.status(404).json({ error: 'Carrito no encontrado' });
     }else{
-        res.status(200).json(result);
+        return res.status(200).json(result);
     }
-
-    next();
+    
 });
 
-routerCarrito.delete( "/:id", (req, res, next) => {
+routerCarrito.delete( "/:id", async (req, res) => {
     if(!auth){
         return res.sendStatus(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    let result = carrito.deleteCarrito(req.params.id);
+    result = await carritosDao.deleteCarrito(req.params.id);
     if(!result){
-        res.status(404).json({ error: 'Carrito no encontrado' });
+        return res.status(404).json({ error: 'Carrito no encontrado' });
     }else{
-        res.status(200).json(result);
+        return res.status(200).json(result);
     }
-    next();
 })
 
-routerCarrito.delete( "/:id/productos/:id_prod", (req, res, next) => {
+routerCarrito.delete( "/:id/productos/:id_prod", async (req, res) => {
     if(!auth){
         return res.sendStatus(401).json({ error: ` -1, descripcion: /api/carrito${req.url} ${req.method} - No autorizada` });
     }
-    let result = carrito.deleteProd(req.params.id, req.params.id_prod);
+    result = await carritosDao.deleteProd(req.params.id, req.params.id_prod);
     if(!result){
-        res.status(404).json({ error: 'Carrito no encontrado' });
+        return res.status(404).json({ error: 'Carrito no encontrado' });
     }else{
-        res.status(200).json(result);
+        return res.status(200).json(result);
     }
-    next();
 })
 
-module.exports = routerCarrito;
+export default routerCarrito;
